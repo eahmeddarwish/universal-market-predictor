@@ -12,13 +12,14 @@ Supports:
 
 Author : Ahmed Darwish
 Email  : eahmeddarwish@gmail.com
-GitHub : github.com/eahmeddarwish
+GitHub : github.com/engrdarwish
 HF     : huggingface.co/engdarwish
 """
 
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
+import spaces
 import gradio as gr
 import pandas as pd
 import numpy as np
@@ -124,6 +125,7 @@ body, .gradio-container { background: #0F1117 !important; color: #E0E0E0; }
 #  CORE PIPELINE
 # ─────────────────────────────────────────────
 
+@spaces.GPU(duration=120)
 def run_analysis(ticker_input, preset_choice, period_label, epochs, use_cache, progress=gr.Progress()):
     """
     Main function wired to Gradio.
@@ -255,20 +257,9 @@ def run_analysis(ticker_input, preset_choice, period_label, epochs, use_cache, p
         return price_fig, pred_fig, loss_fig, forecast_html, signals_html, metrics_html, f"✅ Done — {ticker} ({name})"
 
     except Exception as e:
-        # Log the full traceback server-side for debugging, but never leak
-        # internals (file paths, library stack frames) to end users.
-        import traceback, logging
-        logging.getLogger(__name__).error(
-            "run_analysis failed for ticker=%s period=%s: %s",
-            ticker, period_label, e, exc_info=True,
-        )
-        print(traceback.format_exc())  # visible in HF Space logs
-        return None, None, None, "", "", "", (
-            f"❌ Couldn't analyze '{ticker}'. This usually means the ticker "
-            "symbol is invalid/unsupported by Yahoo Finance, or there isn't "
-            "enough historical data for the selected period. Try a longer "
-            "period or double-check the symbol (see the Ticker Guide below)."
-        )
+        import traceback
+        err = traceback.format_exc()
+        return None, None, None, "", "", "", f"❌ Error: {str(e)}\n\n{err}"
 
 
 # ─────────────────────────────────────────────
@@ -284,7 +275,7 @@ HEADER_HTML = """
   </p>
   <p style="margin-top:10px; font-size:.82rem; color:#6B7394;">
     Built by <b style="color:#4B9EFF;">Ahmed Darwish</b> ·
-    <a href="https://github.com/eahmeddarwish" style="color:#4B9EFF;">GitHub</a> ·
+    <a href="https://github.com/engrdarwish" style="color:#4B9EFF;">GitHub</a> ·
     <a href="https://huggingface.co/engdarwish" style="color:#4B9EFF;">Hugging Face</a>
   </p>
 </div>
@@ -431,7 +422,7 @@ with gr.Blocks(css=CSS, title="Universal Market Predictor — Ahmed Darwish") as
     gr.HTML("""
     <div style="text-align:center; padding:20px 0 8px; color:#6B7394; font-size:.82rem; border-top:1px solid #2F3347; margin-top:24px;">
       Built with ❤️ by <b style="color:#4B9EFF;">Ahmed Darwish</b> &nbsp;·&nbsp;
-      <a href="https://github.com/eahmeddarwish" style="color:#4B9EFF;">GitHub</a> &nbsp;·&nbsp;
+      <a href="https://github.com/engrdarwish" style="color:#4B9EFF;">GitHub</a> &nbsp;·&nbsp;
       <a href="https://huggingface.co/engdarwish" style="color:#4B9EFF;">Hugging Face</a>
       <br><span style="color:#4B4F69;">For educational &amp; research purposes only. Not financial advice.</span>
     </div>
@@ -444,3 +435,4 @@ if __name__ == "__main__":
         server_port=7860,
         share=False,
     )
+
